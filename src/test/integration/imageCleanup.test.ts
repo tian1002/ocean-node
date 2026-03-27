@@ -34,23 +34,27 @@ describe('Docker Image Cleanup Integration Tests', () => {
           {
             socketPath: '/var/run/docker.sock',
             resources: [{ id: 'disk', total: 10 }],
-            storageExpiry: 604800,
-            maxJobDuration: 3600,
-            minJobDuration: 60,
-            fees: {
-              '1': [
-                {
-                  feeToken: '0x123',
-                  prices: [{ id: 'cpu', price: 1 }]
-                }
-              ]
-            },
-            access: {
-              addresses: [],
-              accessLists: null
-            },
             imageRetentionDays: 7,
-            imageCleanupInterval: 60 // 1 minute for testing
+            imageCleanupInterval: 60, // 1 minute for testing
+            environments: [
+              {
+                storageExpiry: 604800,
+                maxJobDuration: 3600,
+                minJobDuration: 60,
+                fees: {
+                  '1': [
+                    {
+                      feeToken: '0x123',
+                      prices: [{ id: 'cpu', price: 1 }]
+                    }
+                  ]
+                },
+                access: {
+                  addresses: [],
+                  accessLists: null
+                }
+              }
+            ]
           }
         ])
       ]
