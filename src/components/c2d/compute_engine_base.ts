@@ -316,6 +316,9 @@ export abstract class C2DEngine {
     } catch (e) {
       CORE_LOGGER.error('Failed to get running jobs:' + e.message)
     }
+
+    const envResourceIds = new Set((env.resources || []).map((r) => r.id))
+
     let totalJobs = 0
     let totalFreeJobs = 0
     let queuedJobs = 0
@@ -324,9 +327,13 @@ export abstract class C2DEngine {
     let maxWaitTimeFree = 0
     let maxRunningTime = 0
     let maxRunningTimeFree = 0
+
     for (const job of jobs) {
-      if (job.environment === env.id) {
-        if (job.queueMaxWaitTime === 0) {
+      const isThisEnv = job.environment === env.id
+      const isRunning = job.queueMaxWaitTime === 0
+
+      if (isThisEnv) {
+        if (isRunning) {
           const timeElapsed =
             new Date().getTime() / 1000 - Number.parseFloat(job?.algoStartTimestamp)
           totalJobs++
@@ -335,22 +342,26 @@ export abstract class C2DEngine {
             totalFreeJobs++
             maxRunningTimeFree += job.maxJobDuration - timeElapsed
           }
+        } else {
+          queuedJobs++
+          maxWaitTime += job.maxJobDuration
+          if (job.isFree) {
+            queuedFreeJobs++
+            maxWaitTimeFree += job.maxJobDuration
+          }
+        }
+      }
 
-          for (const resource of job.resources) {
+      // Resource usage is checked on ALL envs
+      if (isRunning) {
+        for (const resource of job.resources) {
+          if (envResourceIds.has(resource.id)) {
             if (!(resource.id in usedResources)) usedResources[resource.id] = 0
             usedResources[resource.id] += resource.amount
             if (job.isFree) {
               if (!(resource.id in usedFreeResources)) usedFreeResources[resource.id] = 0
               usedFreeResources[resource.id] += resource.amount
             }
-          }
-        } else {
-          // queued job
-          queuedJobs++
-          maxWaitTime += job.maxJobDuration
-          if (job.isFree) {
-            queuedFreeJobs++
-            maxWaitTimeFree += job.maxJobDuration
           }
         }
       }

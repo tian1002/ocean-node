@@ -156,6 +156,40 @@ export const ComputeEnvironmentFreeOptionsSchema = z.object({
     .optional()
 })
 
+export const C2DEnvironmentConfigSchema = z
+  .object({
+    id: z.string().optional(),
+    description: z.string().optional(),
+    storageExpiry: z.number().int().optional().default(604800),
+    minJobDuration: z.number().int().optional().default(60),
+    maxJobDuration: z.number().int().optional().default(3600),
+    maxJobs: z.number().int().optional(),
+    fees: z.record(z.string(), z.array(ComputeEnvFeesSchema)).optional(),
+    access: z
+      .object({
+        addresses: z.array(z.string()),
+        accessLists: z
+          .array(z.record(z.string(), z.array(z.string())))
+          .nullable()
+          .optional()
+      })
+      .optional(),
+    free: ComputeEnvironmentFreeOptionsSchema.optional(),
+    resources: z.array(z.string()).optional() // references to engine-level resource IDs
+  })
+  .refine(
+    (data) =>
+      (data.fees !== undefined && Object.keys(data.fees).length > 0) ||
+      (data.free !== undefined && data.free !== null),
+    {
+      message:
+        'Each environment must have either a non-empty "fees" configuration or a "free" configuration'
+    }
+  )
+  .refine((data) => data.storageExpiry >= data.maxJobDuration, {
+    message: '"storageExpiry" should be greater than "maxJobDuration"'
+  })
+
 export const C2DDockerConfigSchema = z.array(
   z
     .object({
@@ -167,34 +201,10 @@ export const C2DDockerConfigSchema = z.array(
       certPath: z.string().optional(),
       keyPath: z.string().optional(),
       resources: z.array(ComputeResourceSchema).optional(),
-      storageExpiry: z.number().int().optional().default(604800),
-      maxJobDuration: z.number().int().optional().default(3600),
-      minJobDuration: z.number().int().optional().default(60),
-      access: z
-        .object({
-          addresses: z.array(z.string()),
-          accessLists: z
-            .array(z.record(z.string(), z.array(z.string())))
-            .nullable()
-            .optional()
-        })
-        .optional(),
-      fees: z.record(z.string(), z.array(ComputeEnvFeesSchema)).optional(),
-      free: ComputeEnvironmentFreeOptionsSchema.optional(),
       imageRetentionDays: z.number().int().min(1).optional().default(7),
-      imageCleanupInterval: z.number().int().min(3600).optional().default(86400) // min 1 hour, default 24 hours
-    })
-    .refine(
-      (data) =>
-        (data.fees !== undefined && Object.keys(data.fees).length > 0) ||
-        (data.free !== undefined && data.free !== null),
-      {
-        message:
-          'Each docker compute environment must have either a non-empty "fees" configuration or a "free" configuration'
-      }
-    )
-    .refine((data) => data.storageExpiry >= data.maxJobDuration, {
-      message: '"storageExpiry" should be greater than "maxJobDuration"'
+      imageCleanupInterval: z.number().int().min(3600).optional().default(86400),
+      paymentClaimInterval: z.number().int().optional(),
+      environments: z.array(C2DEnvironmentConfigSchema).min(1)
     })
     .refine(
       (data) => {
