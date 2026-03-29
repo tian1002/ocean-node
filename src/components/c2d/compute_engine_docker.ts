@@ -1,6 +1,5 @@
 /* eslint-disable security/detect-non-literal-fs-filename */
 import { Readable } from 'stream'
-import os from 'os'
 import {
   C2DStatusNumber,
   C2DStatusText,
@@ -156,7 +155,6 @@ export class C2DEngineDocker extends C2DEngine {
     }
     return fees
   }
-
 
   public override async start() {
     const config = await getConfiguration()
