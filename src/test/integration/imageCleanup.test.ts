@@ -40,7 +40,7 @@ describe('Docker Image Cleanup Integration Tests', () => {
                 storageExpiry: 604800,
                 maxJobDuration: 3600,
                 minJobDuration: 60,
-                resources: [{ id: 'disk', total: 10, max: 10, min: 0, type: 'disk' }],
+                resources: [{ id: 'cpu', total: 4, max: 4, min: 1, type: 'cpu' }, { id: 'ram', total: 10, max: 10, min: 1, type: 'ram' }, { id: 'disk', total: 10, max: 10, min: 0, type: 'disk' }],
                 fees: {
                   '1': [
                     {

@@ -183,7 +183,7 @@ describe('Compute', () => {
           '0xc594c6e5def4bab63ac29eed19a134c130388f74f019bc74b8f4389df2837a58',
           JSON.stringify(['0xe2DD09d719Da89e5a3D0F2549c7E24566e947260']),
           `${homedir}/.ocean/ocean-contracts/artifacts/address.json`,
-          '[{"socketPath":"/var/run/docker.sock","environments":[{"storageExpiry":604800,"maxJobDuration":3600,"minJobDuration":60,"resources":[{"id":"disk","total":10,"max":10,"min":0,"type":"disk"}],"fees":{"' +
+          '[{"socketPath":"/var/run/docker.sock","environments":[{"storageExpiry":604800,"maxJobDuration":3600,"minJobDuration":60,"resources":[{"id":"cpu","total":4,"max":4,"min":1,"type":"cpu"},{"id":"ram","total":10,"max":10,"min":1,"type":"ram"},{"id":"disk","total":10,"max":10,"min":0,"type":"disk"}],"fees":{"' +
             DEVELOPMENT_CHAIN_ID +
             '":[{"feeToken":"' +
             paymentToken +
@@ -2339,7 +2339,7 @@ describe('Compute Access Restrictions', () => {
             '0xc594c6e5def4bab63ac29eed19a134c130388f74f019bc74b8f4389df2837a58',
             JSON.stringify(['0xe2DD09d719Da89e5a3D0F2549c7E24566e947260']),
             `${homedir}/.ocean/ocean-contracts/artifacts/address.json`,
-            '[{"socketPath":"/var/run/docker.sock","environments":[{"storageExpiry":604800,"maxJobDuration":3600,"minJobDuration":60,"resources":[{"id":"disk","total":10,"max":10,"min":0,"type":"disk"}],"access":{"addresses":["' +
+            '[{"socketPath":"/var/run/docker.sock","environments":[{"storageExpiry":604800,"maxJobDuration":3600,"minJobDuration":60,"resources":[{"id":"cpu","total":4,"max":4,"min":1,"type":"cpu"},{"id":"ram","total":10,"max":10,"min":1,"type":"ram"},{"id":"disk","total":10,"max":10,"min":0,"type":"disk"}],"access":{"addresses":["' +
               allowedAddress +
               '"],"accessLists":[]},"fees":{"' +
               DEVELOPMENT_CHAIN_ID +
@@ -2508,7 +2508,7 @@ describe('Compute Access Restrictions', () => {
                     storageExpiry: 604800,
                     maxJobDuration: 3600,
                     minJobDuration: 60,
-                    resources: [{ id: 'disk', total: 10, max: 10, min: 0, type: 'disk' }],
+                    resources: [{ id: 'cpu', total: 4, max: 4, min: 1, type: 'cpu' }, { id: 'ram', total: 10, max: 10, min: 1, type: 'ram' }, { id: 'disk', total: 10, max: 10, min: 0, type: 'disk' }],
                     access: {
                       addresses: [],
                       accessLists: [{ [DEVELOPMENT_CHAIN_ID]: [accessListAddress] }]
@@ -2664,7 +2664,7 @@ describe('Compute Access Restrictions', () => {
             JSON.stringify([DEVELOPMENT_CHAIN_ID]),
             '0xc594c6e5def4bab63ac29eed19a134c130388f74f019bc74b8f4389df2837a58',
             `${homedir}/.ocean/ocean-contracts/artifacts/address.json`,
-            '[{"socketPath":"/var/run/docker.sock","paymentClaimInterval":60,"environments":[{"storageExpiry":604800,"maxJobDuration":3600,"minJobDuration":60,"resources":[{"id":"disk","total":10,"max":10,"min":0,"type":"disk"}],"fees":{"' +
+            '[{"socketPath":"/var/run/docker.sock","paymentClaimInterval":60,"environments":[{"storageExpiry":604800,"maxJobDuration":3600,"minJobDuration":60,"resources":[{"id":"cpu","total":4,"max":4,"min":1,"type":"cpu"},{"id":"ram","total":10,"max":10,"min":1,"type":"ram"},{"id":"disk","total":10,"max":10,"min":0,"type":"disk"}],"fees":{"' +
               DEVELOPMENT_CHAIN_ID +
               '":[{"feeToken":"' +
               paymentToken +
