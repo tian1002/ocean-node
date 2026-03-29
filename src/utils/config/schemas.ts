@@ -175,7 +175,8 @@ export const C2DEnvironmentConfigSchema = z
       })
       .optional(),
     free: ComputeEnvironmentFreeOptionsSchema.optional(),
-    resources: z.array(z.string()).optional() // references to engine-level resource IDs
+    resources: z.array(ComputeResourceSchema).optional(),
+    cpuCores: z.array(z.number().int().min(0)).optional()
   })
   .refine(
     (data) =>
@@ -189,6 +190,13 @@ export const C2DEnvironmentConfigSchema = z
   .refine((data) => data.storageExpiry >= data.maxJobDuration, {
     message: '"storageExpiry" should be greater than "maxJobDuration"'
   })
+  .refine(
+    (data) => {
+      if (!data.resources) return false
+      return data.resources.some((r) => r.id === 'disk' && r.total)
+    },
+    { message: 'Each environment must have a "disk" resource with a total configured' }
+  )
 
 export const C2DDockerConfigSchema = z.array(
   z
@@ -200,7 +208,6 @@ export const C2DDockerConfigSchema = z.array(
       caPath: z.string().optional(),
       certPath: z.string().optional(),
       keyPath: z.string().optional(),
-      resources: z.array(ComputeResourceSchema).optional(),
       imageRetentionDays: z.number().int().min(1).optional().default(7),
       imageCleanupInterval: z.number().int().min(3600).optional().default(86400),
       paymentClaimInterval: z.number().int().optional(),
@@ -208,21 +215,19 @@ export const C2DDockerConfigSchema = z.array(
     })
     .refine(
       (data) => {
-        if (!data.resources) return false
-        return data.resources.some((r) => r.id === 'disk' && r.total)
-      },
-      { message: 'There is no "disk" resource configured. This is mandatory' }
-    )
-    .transform((data) => {
-      if (data.resources) {
-        for (const resource of data.resources) {
-          if (resource.id === 'disk' && resource.total) {
-            resource.type = 'disk'
+        // CPU core assignments must not overlap across environments
+        const seenCores = new Set<number>()
+        for (const env of data.environments) {
+          if (!env.cpuCores) continue
+          for (const core of env.cpuCores) {
+            if (seenCores.has(core)) return false
+            seenCores.add(core)
           }
         }
-      }
-      return data
-    })
+        return true
+      },
+      { message: 'CPU core assignments must not overlap across environments' }
+    )
 )
 
 export const C2DClusterInfoSchema = z.object({

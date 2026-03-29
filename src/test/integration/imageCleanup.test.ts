@@ -33,7 +33,6 @@ describe('Docker Image Cleanup Integration Tests', () => {
         JSON.stringify([
           {
             socketPath: '/var/run/docker.sock',
-            resources: [{ id: 'disk', total: 10 }],
             imageRetentionDays: 7,
             imageCleanupInterval: 60, // 1 minute for testing
             environments: [
@@ -41,6 +40,7 @@ describe('Docker Image Cleanup Integration Tests', () => {
                 storageExpiry: 604800,
                 maxJobDuration: 3600,
                 minJobDuration: 60,
+                resources: [{ id: 'disk', total: 10, max: 10, min: 0, type: 'disk' }],
                 fees: {
                   '1': [
                     {

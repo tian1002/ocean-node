@@ -96,17 +96,20 @@
   "dockerComputeEnvironments": [
     {
       "socketPath": "/var/run/docker.sock",
-      "resources": [
-        {
-          "id": "disk",
-          "total": 1000000000
-        }
-      ],
       "environments": [
         {
           "storageExpiry": 604800,
           "maxJobDuration": 3600,
           "minJobDuration": 60,
+          "resources": [
+            {
+              "id": "disk",
+              "total": 1000000000,
+              "max": 1000000000,
+              "min": 0,
+              "type": "disk"
+            }
+          ],
           "fees": {
             "11155111": [
               {

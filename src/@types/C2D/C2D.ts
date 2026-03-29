@@ -149,7 +149,8 @@ export interface C2DEnvironmentConfig {
   fees?: ComputeEnvFeesStructure
   access?: ComputeAccessList
   free?: ComputeEnvironmentFreeOptions
-  resources?: string[]
+  resources?: ComputeResource[]
+  cpuCores?: number[] // explicit physical CPU core indices for this environment
 }
 
 export interface C2DDockerConfig {
@@ -160,7 +161,6 @@ export interface C2DDockerConfig {
   caPath: string
   certPath: string
   keyPath: string
-  resources?: ComputeResource[]
   imageRetentionDays?: number // Default: 7 days
   imageCleanupInterval?: number // Default: 86400 seconds (24 hours)
   paymentClaimInterval?: number // Default: 3600 seconds (1 hour)

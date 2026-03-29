@@ -59,11 +59,6 @@ import { ZeroAddress } from 'ethers'
 
 export class C2DEngineDocker extends C2DEngine {
   private envs: ComputeEnvironment[] = []
-  private engineResources: ComputeResource[] = []
-
-  public getEngineResources(): ComputeResource[] {
-    return this.engineResources
-  }
 
   public docker: Dockerode
   private cronTimer: any
@@ -77,18 +72,15 @@ export class C2DEngineDocker extends C2DEngine {
   private cleanupInterval: number
   private paymentClaimInterval: number
   private cpuAllocations: Map<string, number[]> = new Map()
-  private envCpuCores: number[] = []
-  private cpuOffset: number
+  private envCpuCoresMap: Map<string, number[]> = new Map()
   public constructor(
     clusterConfig: C2DClusterInfo,
     db: C2DDatabase,
     escrow: Escrow,
     keyManager: KeyManager,
-    dockerRegistryAuths: dockerRegistrysAuth,
-    cpuOffset: number = 0
+    dockerRegistryAuths: dockerRegistrysAuth
   ) {
     super(clusterConfig, db, escrow, keyManager, dockerRegistryAuths)
-    this.cpuOffset = cpuOffset
 
     this.docker = null
     if (clusterConfig.connection.socketPath) {
@@ -165,26 +157,6 @@ export class C2DEngineDocker extends C2DEngine {
     return fees
   }
 
-  private buildEnvResources(envDef: C2DEnvironmentConfig): ComputeResource[] {
-    let resources: ComputeResource[]
-    if (envDef.resources && envDef.resources.length > 0) {
-      // Filter engine resources to only those referenced by this environment
-      const allowedIds = new Set(envDef.resources)
-      resources = this.engineResources
-        .filter((r) => allowedIds.has(r.id))
-        .map((r) => JSON.parse(JSON.stringify(r)))
-      for (const id of envDef.resources) {
-        if (!this.engineResources.some((r) => r.id === id)) {
-          CORE_LOGGER.warn(
-            `Environment references resource "${id}" which does not exist at engine level`
-          )
-        }
-      }
-    } else {
-      resources = this.engineResources.map((r) => JSON.parse(JSON.stringify(r)))
-    }
-    return resources
-  }
 
   public override async start() {
     const config = await getConfiguration()
@@ -206,52 +178,6 @@ export class C2DEngineDocker extends C2DEngine {
       }
     }
 
-    // Build engine-level resources from system info + user config overrides
-    const cpuResources: ComputeResource = {
-      id: 'cpu',
-      type: 'cpu',
-      total: sysinfo.NCPU,
-      max: sysinfo.NCPU,
-      min: 1,
-      description: os.cpus()[0].model
-    }
-    const ramResources: ComputeResource = {
-      id: 'ram',
-      type: 'ram',
-      total: Math.floor(sysinfo.MemTotal / 1024 / 1024 / 1024),
-      max: Math.floor(sysinfo.MemTotal / 1024 / 1024 / 1024),
-      min: 1
-    }
-    this.engineResources = []
-    if (envConfig.resources) {
-      for (const res of envConfig.resources) {
-        if (res.id === 'cpu') {
-          if (res.total) cpuResources.total = res.total
-          if (res.max) cpuResources.max = res.max
-          if (res.min) cpuResources.min = res.min
-        } else if (res.id === 'ram') {
-          if (res.total) ramResources.total = res.total
-          if (res.max) ramResources.max = res.max
-          if (res.min) ramResources.min = res.min
-        } else {
-          if (!res.max) res.max = res.total
-          if (!res.min) res.min = 0
-          this.engineResources.push(res)
-        }
-      }
-    }
-    this.engineResources.push(cpuResources)
-    this.engineResources.push(ramResources)
-
-    // Build CPU core affinity map (engine-level, shared across all environments)
-    this.envCpuCores = Array.from(
-      { length: cpuResources.total },
-      (_, i) => this.cpuOffset + i
-    )
-    CORE_LOGGER.info(
-      `CPU affinity: engine cores ${this.envCpuCores[0]}-${this.envCpuCores[this.envCpuCores.length - 1]} (offset=${this.cpuOffset}, total=${cpuResources.total})`
-    )
-
     const platform: RunningPlatform = {
       architecture: sysinfo.Architecture,
       os: sysinfo.OSType
@@ -263,7 +189,9 @@ export class C2DEngineDocker extends C2DEngine {
 
       const fees = this.processFeesForEnvironment(envDef.fees, supportedChains)
 
-      const envResources = this.buildEnvResources(envDef)
+      const envResources: ComputeResource[] = envDef.resources
+        ? envDef.resources.map((r) => JSON.parse(JSON.stringify(r)))
+        : []
 
       const env: ComputeEnvironment = {
         id: '',
@@ -285,6 +213,7 @@ export class C2DEngineDocker extends C2DEngine {
       if (envDef.minJobDuration !== undefined) env.minJobDuration = envDef.minJobDuration
       if (envDef.maxJobDuration !== undefined) env.maxJobDuration = envDef.maxJobDuration
       if (envDef.maxJobs !== undefined) env.maxJobs = envDef.maxJobs
+      if (envDef.description !== undefined) env.description = envDef.description
 
       // Free tier config for this environment
       if (envDef.free) {
@@ -306,6 +235,14 @@ export class C2DEngineDocker extends C2DEngine {
         this.getC2DConfig().hash +
         '-' +
         create256Hash(JSON.stringify(env.fees) + envIdSuffix)
+
+      // Per-environment CPU core affinity
+      if (envDef.cpuCores && envDef.cpuCores.length > 0) {
+        this.envCpuCoresMap.set(env.id, envDef.cpuCores)
+        CORE_LOGGER.info(
+          `CPU affinity: environment ${env.id} cores [${envDef.cpuCores.join(',')}]`
+        )
+      }
 
       this.envs.push(env)
       CORE_LOGGER.info(
@@ -1607,8 +1544,9 @@ export class C2DEngineDocker extends C2DEngine {
     if (job.status === C2DStatusNumber.ConfiguringVolumes) {
       // create the volume & create container
       // TO DO C2D:  Choose driver & size
-      // get engine-level resources for Docker device/hardware configuration
-      const envResource = this.engineResources
+      // get environment-specific resources for Docker device/hardware configuration
+      const env = this.envs.find((e) => e.id === job.environment)
+      const envResource = env?.resources || []
       const volume: VolumeCreateOptions = {
         Name: job.jobId + '-volume'
       }
@@ -1662,7 +1600,7 @@ export class C2DEngineDocker extends C2DEngine {
         hostConfig.CpuPeriod = 100000 // 100 miliseconds is usually the default
         hostConfig.CpuQuota = Math.floor(cpus * hostConfig.CpuPeriod)
         // Pin the container to specific physical CPU cores
-        const cpusetStr = this.allocateCpus(job.jobId, cpus)
+        const cpusetStr = this.allocateCpus(job.jobId, cpus, job.environment)
         if (cpusetStr) {
           hostConfig.CpusetCpus = cpusetStr
         }
@@ -1958,8 +1896,9 @@ export class C2DEngineDocker extends C2DEngine {
     return cores
   }
 
-  private allocateCpus(jobId: string, count: number): string | null {
-    if (this.envCpuCores.length === 0 || count <= 0) return null
+  private allocateCpus(jobId: string, count: number, envId: string): string | null {
+    const envCores = this.envCpuCoresMap.get(envId)
+    if (!envCores || envCores.length === 0 || count <= 0) return null
 
     const usedCores = new Set<number>()
     for (const cores of this.cpuAllocations.values()) {
@@ -1969,7 +1908,7 @@ export class C2DEngineDocker extends C2DEngine {
     }
 
     const freeCores: number[] = []
-    for (const core of this.envCpuCores) {
+    for (const core of envCores) {
       if (!usedCores.has(core)) {
         freeCores.push(core)
         if (freeCores.length === count) break
@@ -1978,7 +1917,7 @@ export class C2DEngineDocker extends C2DEngine {
 
     if (freeCores.length < count) {
       CORE_LOGGER.warn(
-        `CPU affinity: not enough free cores for job ${jobId} (requested=${count}, available=${freeCores.length}/${this.envCpuCores.length})`
+        `CPU affinity: not enough free cores for job ${jobId} in env ${envId} (requested=${count}, available=${freeCores.length}/${envCores.length})`
       )
       return null
     }
@@ -2003,7 +1942,7 @@ export class C2DEngineDocker extends C2DEngine {
    * On startup, inspects running Docker containers to rebuild the CPU allocation map.
    */
   private async rebuildCpuAllocations(): Promise<void> {
-    if (this.envCpuCores.length === 0) return
+    if (this.envCpuCoresMap.size === 0) return
     try {
       const jobs = await this.db.getRunningJobs(this.getC2DConfig().hash)
       for (const job of jobs) {
