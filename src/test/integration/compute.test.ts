@@ -2508,7 +2508,11 @@ describe('Compute Access Restrictions', () => {
                     storageExpiry: 604800,
                     maxJobDuration: 3600,
                     minJobDuration: 60,
-                    resources: [{ id: 'cpu', total: 4, max: 4, min: 1, type: 'cpu' }, { id: 'ram', total: 10, max: 10, min: 1, type: 'ram' }, { id: 'disk', total: 10, max: 10, min: 0, type: 'disk' }],
+                    resources: [
+                      { id: 'cpu', total: 4, max: 4, min: 1, type: 'cpu' },
+                      { id: 'ram', total: 10, max: 10, min: 1, type: 'ram' },
+                      { id: 'disk', total: 10, max: 10, min: 0, type: 'disk' }
+                    ],
                     access: {
                       addresses: [],
                       accessLists: [{ [DEVELOPMENT_CHAIN_ID]: [accessListAddress] }]
