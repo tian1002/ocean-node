@@ -352,10 +352,11 @@ export abstract class C2DEngine {
         }
       }
 
-      // Resource usage is checked on ALL envs
       if (isRunning) {
         for (const resource of job.resources) {
           if (envResourceIds.has(resource.id)) {
+            const isCpu = resource.id === 'cpu'
+            if (isCpu && !isThisEnv) continue // CPU is partitioned, skip other envs
             if (!(resource.id in usedResources)) usedResources[resource.id] = 0
             usedResources[resource.id] += resource.amount
             if (job.isFree) {
