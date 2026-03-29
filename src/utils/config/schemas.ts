@@ -190,13 +190,6 @@ export const C2DEnvironmentConfigSchema = z
   .refine((data) => data.storageExpiry >= data.maxJobDuration, {
     message: '"storageExpiry" should be greater than "maxJobDuration"'
   })
-  .refine(
-    (data) => {
-      if (!data.resources) return false
-      return data.resources.some((r) => r.id === 'disk' && r.total)
-    },
-    { message: 'Each environment must have a "disk" resource with a total configured' }
-  )
 
 export const C2DDockerConfigSchema = z.array(
   z
