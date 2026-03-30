@@ -142,6 +142,7 @@ export const ComputeEnvFeesSchema = z.object({
 })
 
 export const ComputeEnvironmentFreeOptionsSchema = z.object({
+  minJobDuration: z.number().int().optional().default(60),
   maxJobDuration: z.number().int().optional().default(3600),
   maxJobs: z.number().int().optional().default(3),
   resources: z.array(ComputeResourceSchema).optional(),
@@ -189,6 +190,23 @@ export const C2DEnvironmentConfigSchema = z
   )
   .refine((data) => data.storageExpiry >= data.maxJobDuration, {
     message: '"storageExpiry" should be greater than "maxJobDuration"'
+  })
+  .refine(
+    (data) => {
+      if (!data.resources) return false
+      return data.resources.some((r) => r.id === 'disk' && r.total)
+    },
+    { message: 'There is no "disk" resource configured. This is mandatory' }
+  )
+  .transform((data) => {
+    if (data.resources) {
+      for (const resource of data.resources) {
+        if (resource.id === 'disk' && resource.total) {
+          resource.type = 'disk'
+        }
+      }
+    }
+    return data
   })
 
 export const C2DDockerConfigSchema = z.array(
