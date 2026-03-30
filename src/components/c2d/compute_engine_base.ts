@@ -334,13 +334,16 @@ export abstract class C2DEngine {
 
       if (isThisEnv) {
         if (isRunning) {
-          const timeElapsed =
-            new Date().getTime() / 1000 - Number.parseFloat(job?.algoStartTimestamp)
           totalJobs++
-          maxRunningTime += job.maxJobDuration - timeElapsed
+          const algoStart = Number.parseFloat(job?.algoStartTimestamp)
+          const timeRemaining =
+            algoStart > 0
+              ? job.maxJobDuration - (new Date().getTime() / 1000 - algoStart)
+              : job.maxJobDuration
+          maxRunningTime += timeRemaining
           if (job.isFree) {
             totalFreeJobs++
-            maxRunningTimeFree += job.maxJobDuration - timeElapsed
+            maxRunningTimeFree += timeRemaining
           }
         } else {
           queuedJobs++
@@ -387,17 +390,12 @@ export abstract class C2DEngine {
   private checkGlobalResourceAvailability(
     allEnvironments: ComputeEnvironment[],
     resourceId: string,
-    amount: number,
-    isFree: boolean
+    amount: number
   ) {
     let globalUsed = 0
     let globalTotal = 0
     for (const e of allEnvironments) {
-      const res = isFree
-        ? e.free
-          ? this.getResource(e.free.resources, resourceId)
-          : null
-        : this.getResource(e.resources, resourceId)
+      const res = this.getResource(e.resources, resourceId)
       if (res) {
         globalTotal += res.total || 0
         globalUsed += res.inUse || 0
@@ -431,12 +429,7 @@ export abstract class C2DEngine {
       // Global check for non-GPU resources (cpu, ram, disk are per-env exclusive)
       // GPUs are shared-exclusive so their inUse already reflects global usage
       if (allEnvironments && envResource.type !== 'gpu') {
-        this.checkGlobalResourceAvailability(
-          allEnvironments,
-          request.id,
-          request.amount,
-          false
-        )
+        this.checkGlobalResourceAvailability(allEnvironments, request.id, request.amount)
       }
 
       if (isFree) {
@@ -445,15 +438,6 @@ export abstract class C2DEngine {
         if (!envResource) throw new Error(`No such free resource ${request.id}`)
         if (envResource.total - envResource.inUse < request.amount)
           throw new Error(`Not enough available ${request.id} for free`)
-
-        if (allEnvironments && envResource.type !== 'gpu') {
-          this.checkGlobalResourceAvailability(
-            allEnvironments,
-            request.id,
-            request.amount,
-            true
-          )
-        }
       }
     }
     if ('maxJobs' in env && env.maxJobs && env.runningJobs + 1 > env.maxJobs) {
