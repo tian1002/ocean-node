@@ -334,6 +334,9 @@ export abstract class C2DEngine {
 
       if (isThisEnv) {
         if (isRunning) {
+          const timeElapsed = job.buildStartTimestamp
+            ? new Date().getTime() / 1000 - Number.parseFloat(job?.buildStartTimestamp)
+            : new Date().getTime() / 1000 - Number.parseFloat(job?.algoStartTimestamp)
           totalJobs++
           const algoStart = Number.parseFloat(job?.algoStartTimestamp)
           const timeRemaining =
