@@ -387,6 +387,8 @@ export abstract class C2DEngine {
     }
   }
 
+  protected physicalLimits: Map<string, number> = new Map()
+
   private checkGlobalResourceAvailability(
     allEnvironments: ComputeEnvironment[],
     resourceId: string,
@@ -400,6 +402,10 @@ export abstract class C2DEngine {
         globalTotal += res.total || 0
         globalUsed += res.inUse || 0
       }
+    }
+    const physicalLimit = this.physicalLimits.get(resourceId)
+    if (physicalLimit !== undefined && globalTotal > physicalLimit) {
+      globalTotal = physicalLimit
     }
     const globalRemainder = globalTotal - globalUsed
     if (globalRemainder < amount) {

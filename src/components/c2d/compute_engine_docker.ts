@@ -169,6 +169,9 @@ export class C2DEngineDocker extends C2DEngine {
       return
     }
 
+    this.physicalLimits.set('cpu', sysinfo.NCPU)
+    this.physicalLimits.set('ram', Math.floor(sysinfo.MemTotal / 1024 / 1024 / 1024))
+
     // Determine supported chains
     const supportedChains: number[] = []
     if (config.supportedNetworks) {
