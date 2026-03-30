@@ -223,6 +223,7 @@ export class C2DEngineDocker extends C2DEngine {
           }
 
           if (res.id !== 'cpu' && res.id !== 'ram') {
+            if (res.id === 'disk' && res.total) res.type = 'disk'
             if (!res.max) res.max = res.total
             if (!res.min) res.min = 0
             envResources.push(res)
