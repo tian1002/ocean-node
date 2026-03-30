@@ -272,18 +272,23 @@ export class C2DEngineDocker extends C2DEngine {
         '-' +
         create256Hash(JSON.stringify(env.fees) + envIdSuffix)
 
-      // Per-environment CPU core affinity
-      if (envDef.cpuCores && envDef.cpuCores.length > 0) {
-        this.envCpuCoresMap.set(env.id, envDef.cpuCores)
-        CORE_LOGGER.info(
-          `CPU affinity: environment ${env.id} cores [${envDef.cpuCores.join(',')}]`
-        )
-      }
-
       this.envs.push(env)
       CORE_LOGGER.info(
         `Engine ${this.getC2DConfig().hash}: created environment ${env.id} (index=${envIdx}, resources=${envResources.map((r) => r.id).join(',')})`
       )
+    }
+
+    let cpuOffset = 0
+    for (const env of this.envs) {
+      const cpuRes = this.getResource(env.resources, 'cpu')
+      if (cpuRes && cpuRes.total > 0) {
+        const cores = Array.from({ length: cpuRes.total }, (_, i) => cpuOffset + i)
+        this.envCpuCoresMap.set(env.id, cores)
+        CORE_LOGGER.info(
+          `CPU affinity: environment ${env.id} cores ${cores[0]}-${cores[cores.length - 1]} (offset=${cpuOffset}, total=${cpuRes.total})`
+        )
+        cpuOffset += cpuRes.total
+      }
     }
 
     // Rebuild CPU allocations from running containers (handles node restart)

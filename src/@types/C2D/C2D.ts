@@ -150,7 +150,6 @@ export interface C2DEnvironmentConfig {
   access?: ComputeAccessList
   free?: ComputeEnvironmentFreeOptions
   resources?: ComputeResource[]
-  cpuCores?: number[] // explicit physical CPU core indices for this environment
 }
 
 export interface C2DDockerConfig {

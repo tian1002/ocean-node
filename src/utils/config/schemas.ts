@@ -175,8 +175,7 @@ export const C2DEnvironmentConfigSchema = z
       })
       .optional(),
     free: ComputeEnvironmentFreeOptionsSchema.optional(),
-    resources: z.array(ComputeResourceSchema).optional(),
-    cpuCores: z.array(z.number().int().min(0)).optional()
+    resources: z.array(ComputeResourceSchema).optional()
   })
   .refine(
     (data) =>
@@ -206,21 +205,6 @@ export const C2DDockerConfigSchema = z.array(
       paymentClaimInterval: z.number().int().optional(),
       environments: z.array(C2DEnvironmentConfigSchema).min(1)
     })
-    .refine(
-      (data) => {
-        // CPU core assignments must not overlap across environments
-        const seenCores = new Set<number>()
-        for (const env of data.environments) {
-          if (!env.cpuCores) continue
-          for (const core of env.cpuCores) {
-            if (seenCores.has(core)) return false
-            seenCores.add(core)
-          }
-        }
-        return true
-      },
-      { message: 'CPU core assignments must not overlap across environments' }
-    )
 )
 
 export const C2DClusterInfoSchema = z.object({
