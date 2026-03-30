@@ -96,17 +96,17 @@
   "dockerComputeEnvironments": [
     {
       "socketPath": "/var/run/docker.sock",
-      "resources": [
-        {
-          "id": "disk",
-          "total": 1
-        }
-      ],
       "environments": [
         {
           "storageExpiry": 604800,
           "maxJobDuration": 3600,
           "minJobDuration": 60,
+          "resources": [
+            {
+              "id": "disk",
+              "total": 1
+            }
+          ],
           "access": {
             "addresses": [],
             "accessLists": []
