@@ -1553,12 +1553,11 @@ export class C2DEngineDocker extends C2DEngine {
       }
       // check if resources are available now
       try {
-        const env = await this.getComputeEnvironment(
-          job.payment && job.payment.chainId ? job.payment.chainId : null,
-          job.environment,
-          null
-        )
-        await this.checkIfResourcesAreAvailable(job.resources, env, job.isFree)
+        const chainId = job.payment && job.payment.chainId ? job.payment.chainId : null
+        const allEnvs = await this.getComputeEnvironments(chainId)
+        const env = allEnvs.find((e) => e.id === job.environment)
+        if (!env) throw new Error(`Environment ${job.environment} not found`)
+        await this.checkIfResourcesAreAvailable(job.resources, env, job.isFree, allEnvs)
       } catch (err) {
         // resources are still not available
         return

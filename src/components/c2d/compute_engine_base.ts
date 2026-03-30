@@ -317,7 +317,7 @@ export abstract class C2DEngine {
       CORE_LOGGER.error('Failed to get running jobs:' + e.message)
     }
 
-    const envResourceIds = new Set((env.resources || []).map((r) => r.id))
+    const envResourceMap = new Map((env.resources || []).map((r) => [r.id, r]))
 
     let totalJobs = 0
     let totalFreeJobs = 0
@@ -354,9 +354,12 @@ export abstract class C2DEngine {
 
       if (isRunning) {
         for (const resource of job.resources) {
-          if (envResourceIds.has(resource.id)) {
-            const isCpu = resource.id === 'cpu'
-            if (isCpu && !isThisEnv) continue // CPU is partitioned, skip other envs
+          const envRes = envResourceMap.get(resource.id)
+          if (envRes) {
+            // GPUs are shared-exclusive: inUse tracked globally across all envs
+            // Everything else (cpu, ram, disk) is per-env exclusive
+            const isSharedExclusive = envRes.type === 'gpu'
+            if (!isSharedExclusive && !isThisEnv) continue
             if (!(resource.id in usedResources)) usedResources[resource.id] = 0
             usedResources[resource.id] += resource.amount
             if (job.isFree) {
@@ -381,12 +384,40 @@ export abstract class C2DEngine {
     }
   }
 
+  private checkGlobalResourceAvailability(
+    allEnvironments: ComputeEnvironment[],
+    resourceId: string,
+    amount: number,
+    isFree: boolean
+  ) {
+    let globalUsed = 0
+    let globalTotal = 0
+    for (const e of allEnvironments) {
+      const res = isFree
+        ? e.free
+          ? this.getResource(e.free.resources, resourceId)
+          : null
+        : this.getResource(e.resources, resourceId)
+      if (res) {
+        globalTotal += res.total || 0
+        globalUsed += res.inUse || 0
+      }
+    }
+    const globalRemainder = globalTotal - globalUsed
+    if (globalRemainder < amount) {
+      throw new Error(
+        `Not enough available ${resourceId} globally (remaining: ${globalRemainder}, requested: ${amount})`
+      )
+    }
+  }
+
   // overridden by each engine if required
   // eslint-disable-next-line require-await
   public async checkIfResourcesAreAvailable(
     resourcesRequest: ComputeResourceRequest[],
     env: ComputeEnvironment,
-    isFree: boolean
+    isFree: boolean,
+    allEnvironments?: ComputeEnvironment[]
   ) {
     // Filter out resources with amount 0 as they're not actually being requested
     const activeResources = resourcesRequest.filter((r) => r.amount > 0)
@@ -396,12 +427,33 @@ export abstract class C2DEngine {
       if (!envResource) throw new Error(`No such resource ${request.id}`)
       if (envResource.total - envResource.inUse < request.amount)
         throw new Error(`Not enough available ${request.id}`)
+
+      // Global check for non-GPU resources (cpu, ram, disk are per-env exclusive)
+      // GPUs are shared-exclusive so their inUse already reflects global usage
+      if (allEnvironments && envResource.type !== 'gpu') {
+        this.checkGlobalResourceAvailability(
+          allEnvironments,
+          request.id,
+          request.amount,
+          false
+        )
+      }
+
       if (isFree) {
         if (!env.free) throw new Error(`No free resources`)
         envResource = this.getResource(env.free?.resources, request.id)
         if (!envResource) throw new Error(`No such free resource ${request.id}`)
         if (envResource.total - envResource.inUse < request.amount)
           throw new Error(`Not enough available ${request.id} for free`)
+
+        if (allEnvironments && envResource.type !== 'gpu') {
+          this.checkGlobalResourceAvailability(
+            allEnvironments,
+            request.id,
+            request.amount,
+            true
+          )
+        }
       }
     }
     if ('maxJobs' in env && env.maxJobs && env.runningJobs + 1 > env.maxJobs) {

@@ -29,6 +29,7 @@ import {
 import { EncryptMethod } from '../../../@types/fileObject.js'
 import {
   ComputeAccessList,
+  ComputeEnvironment,
   ComputeResourceRequestWithPrice
 } from '../../../@types/C2D/C2D.js'
 // import { verifyProviderFees } from '../utils/feesHandler.js'
@@ -119,8 +120,10 @@ export class PaidComputeStartHandler extends CommonComputeHandler {
         }
       }
 
+      let allEnvs: ComputeEnvironment[]
       try {
-        env = await engine.getComputeEnvironment(null, task.environment)
+        allEnvs = await engine.getComputeEnvironments()
+        env = allEnvs.find((e) => e.id === task.environment)
         if (!env) {
           return {
             stream: null,
@@ -150,7 +153,7 @@ export class PaidComputeStartHandler extends CommonComputeHandler {
         }
       }
       try {
-        await engine.checkIfResourcesAreAvailable(task.resources, env, false)
+        await engine.checkIfResourcesAreAvailable(task.resources, env, false, allEnvs)
       } catch (e) {
         if (task.queueMaxWaitTime > 0) {
           CORE_LOGGER.verbose(
@@ -885,7 +888,8 @@ export class FreeComputeStartHandler extends CommonComputeHandler {
           }
         }
       }
-      const env = await engine.getComputeEnvironment(null, task.environment)
+      const allFreeEnvs = await engine.getComputeEnvironments()
+      const env = allFreeEnvs.find((e) => e.id === task.environment)
       if (!env) {
         return {
           stream: null,
@@ -931,7 +935,7 @@ export class FreeComputeStartHandler extends CommonComputeHandler {
         }
       }
       try {
-        await engine.checkIfResourcesAreAvailable(task.resources, env, true)
+        await engine.checkIfResourcesAreAvailable(task.resources, env, true, allFreeEnvs)
       } catch (e) {
         if (task.queueMaxWaitTime > 0) {
           CORE_LOGGER.verbose(
