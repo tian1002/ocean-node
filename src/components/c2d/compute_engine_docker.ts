@@ -1,5 +1,6 @@
 /* eslint-disable security/detect-non-literal-fs-filename */
 import { Readable } from 'stream'
+import os from 'os'
 import {
   C2DStatusNumber,
   C2DStatusText,
@@ -187,9 +188,46 @@ export class C2DEngineDocker extends C2DEngine {
 
       const fees = this.processFeesForEnvironment(envDef.fees, supportedChains)
 
-      const envResources: ComputeResource[] = envDef.resources
-        ? envDef.resources.map((r) => JSON.parse(JSON.stringify(r)))
-        : []
+      const envResources: ComputeResource[] = []
+      const cpuResources = {
+        id: 'cpu',
+        type: 'cpu',
+        total: sysinfo.NCPU,
+        max: sysinfo.NCPU,
+        min: 1,
+        description: os.cpus()[0].model
+      }
+      const ramResources = {
+        id: 'ram',
+        type: 'ram',
+        total: Math.floor(sysinfo.MemTotal / 1024 / 1024 / 1024),
+        max: Math.floor(sysinfo.MemTotal / 1024 / 1024 / 1024),
+        min: 1
+      }
+
+      if (envDef.resources) {
+        for (const res of envDef.resources) {
+          // allow user to add other resources
+          if (res.id === 'cpu') {
+            if (res.total) cpuResources.total = res.total
+            if (res.max) cpuResources.max = res.max
+            if (res.min) cpuResources.min = res.min
+          }
+          if (res.id === 'ram') {
+            if (res.total) ramResources.total = res.total
+            if (res.max) ramResources.max = res.max
+            if (res.min) ramResources.min = res.min
+          }
+
+          if (res.id !== 'cpu' && res.id !== 'ram') {
+            if (!res.max) res.max = res.total
+            if (!res.min) res.min = 0
+            envResources.push(res)
+          }
+        }
+      }
+      envResources.push(cpuResources)
+      envResources.push(ramResources)
 
       const env: ComputeEnvironment = {
         id: '',
