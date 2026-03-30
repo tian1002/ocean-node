@@ -338,15 +338,10 @@ export abstract class C2DEngine {
             ? new Date().getTime() / 1000 - Number.parseFloat(job?.buildStartTimestamp)
             : new Date().getTime() / 1000 - Number.parseFloat(job?.algoStartTimestamp)
           totalJobs++
-          const algoStart = Number.parseFloat(job?.algoStartTimestamp)
-          const timeRemaining =
-            algoStart > 0
-              ? job.maxJobDuration - (new Date().getTime() / 1000 - algoStart)
-              : job.maxJobDuration
-          maxRunningTime += timeRemaining
+          maxRunningTime += job.maxJobDuration - timeElapsed
           if (job.isFree) {
             totalFreeJobs++
-            maxRunningTimeFree += timeRemaining
+            maxRunningTimeFree += job.maxJobDuration - timeElapsed
           }
         } else {
           queuedJobs++
