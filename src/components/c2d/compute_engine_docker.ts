@@ -41,6 +41,7 @@ import {
   writeFileSync,
   appendFileSync,
   statSync,
+  statfsSync,
   createReadStream
 } from 'fs'
 import { pipeline } from 'node:stream/promises'
@@ -171,6 +172,13 @@ export class C2DEngineDocker extends C2DEngine {
 
     this.physicalLimits.set('cpu', sysinfo.NCPU)
     this.physicalLimits.set('ram', Math.floor(sysinfo.MemTotal / 1024 / 1024 / 1024))
+    try {
+      const diskStats = statfsSync(this.getC2DConfig().tempFolder)
+      const diskGB = Math.floor((diskStats.bsize * diskStats.blocks) / 1024 / 1024 / 1024)
+      this.physicalLimits.set('disk', diskGB)
+    } catch (e) {
+      CORE_LOGGER.warn('Could not detect physical disk size: ' + e.message)
+    }
 
     // Determine supported chains
     const supportedChains: number[] = []
@@ -207,6 +215,14 @@ export class C2DEngineDocker extends C2DEngine {
         max: Math.floor(sysinfo.MemTotal / 1024 / 1024 / 1024),
         min: 1
       }
+      const physicalDiskGB = this.physicalLimits.get('disk') || 0
+      const diskResources = {
+        id: 'disk',
+        type: 'disk',
+        total: physicalDiskGB,
+        max: physicalDiskGB,
+        min: 0
+      }
 
       if (envDef.resources) {
         for (const res of envDef.resources) {
@@ -221,9 +237,13 @@ export class C2DEngineDocker extends C2DEngine {
             if (res.max) ramResources.max = res.max
             if (res.min) ramResources.min = res.min
           }
+          if (res.id === 'disk') {
+            if (res.total) diskResources.total = res.total
+            if (res.max) diskResources.max = res.max
+            if (res.min !== undefined) diskResources.min = res.min
+          }
 
-          if (res.id !== 'cpu' && res.id !== 'ram') {
-            if (res.id === 'disk' && res.total) res.type = 'disk'
+          if (res.id !== 'cpu' && res.id !== 'ram' && res.id !== 'disk') {
             if (!res.max) res.max = res.total
             if (!res.min) res.min = 0
             envResources.push(res)
@@ -232,6 +252,7 @@ export class C2DEngineDocker extends C2DEngine {
       }
       envResources.push(cpuResources)
       envResources.push(ramResources)
+      envResources.push(diskResources)
 
       const env: ComputeEnvironment = {
         id: '',
