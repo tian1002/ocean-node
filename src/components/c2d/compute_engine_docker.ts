@@ -44,6 +44,7 @@ import {
   createWriteStream,
   existsSync,
   mkdirSync,
+  chmodSync,
   rmSync,
   writeFileSync,
   appendFileSync,
@@ -816,7 +817,7 @@ export class C2DEngineDocker extends C2DEngine {
 
   private async cleanUpUnknownLocks(chain: string, currentTimestamp: bigint) {
     try {
-      const nodeAddress = await this.getKeyManager().getEthAddress()
+      const nodeAddress = this.getKeyManager().getEthAddress()
       const jobIds: any[] = []
       const tokens: string[] = []
       const payer: string[] = []
@@ -827,6 +828,10 @@ export class C2DEngineDocker extends C2DEngine {
         '0x0000000000000000000000000000000000000000',
         nodeAddress
       )
+      if (!balocks || balocks.length === 0) {
+        CORE_LOGGER.warn(`Could not find any locks for chain ${chain}, skipping cleanup`)
+        return
+      }
       for (const lock of balocks) {
         const lockExpiry = BigInt(lock.expiry.toString())
         if (currentTimestamp > lockExpiry) {
@@ -2991,6 +2996,8 @@ export class C2DEngineDocker extends C2DEngine {
         if (!existsSync(dir)) {
           mkdirSync(dir, { recursive: true })
         }
+        // update directory permissions to allow read/write from job containers
+        chmodSync(dir, 0o777)
       }
       return true
     } catch (e) {
