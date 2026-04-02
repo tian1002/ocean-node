@@ -199,6 +199,7 @@ The `DOCKER_COMPUTE_ENVIRONMENTS` environment variable should be a JSON array of
 - **imageRetentionDays** - how long docker images are kept, in days. Default: 7
 - **imageCleanupInterval** - how often to run cleanup for docker images, in seconds. Min: 3600 (1hour), Default: 86400 (24 hours)
 - **paymentClaimInterval** - how often to run payment claiming, in seconds. Default: 3600 (1 hour)
+- **enableBenchmark** - when set to `true`, the node will auto-create a benchmark compute environment at startup using the system's available resources (CPU, RAM, disk, GPUs). Default: `false`
 - **storageExpiry**: Amount of seconds for storage expiry.(Mandatory)
 - **maxJobDuration**: Maximum duration in seconds for a job.(Mandatory)
 - **minJobDuration**: Minimum duration in seconds for a job.(Mandatory)
