@@ -167,6 +167,7 @@ export interface C2DDockerConfig {
   scanImages?: boolean
   scanImageDBUpdateInterval?: number // Default: 12 hours
   environments: C2DEnvironmentConfig[]
+  enableNetwork?: boolean // whether network is enabled for algorithm containers
 }
 
 export type ComputeResultType =
