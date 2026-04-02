@@ -210,7 +210,6 @@ export const C2DDockerConfigSchema = z.array(
     keyPath: z.string().optional(),
     imageRetentionDays: z.number().int().min(1).optional().default(7),
     imageCleanupInterval: z.number().int().min(3600).optional().default(86400),
-    paymentClaimInterval: z.number().int().optional(),
     environments: z.array(C2DEnvironmentConfigSchema).min(1)
   })
 )
