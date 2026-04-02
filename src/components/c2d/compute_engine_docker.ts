@@ -189,16 +189,19 @@ export class C2DEngineDocker extends C2DEngine {
     const ramGB = this.physicalLimits.get('ram') || 0
     const physicalDiskGB = this.physicalLimits.get('disk') || 0
 
-    const gpuResources: ComputeResource[] = []
+    const gpuMap = new Map<string, ComputeResource>()
     for (const env of envConfig.environments) {
       if (env.resources) {
         for (const res of env.resources) {
           if (res.id !== 'cpu' && res.id !== 'ram' && res.id !== 'disk') {
-            gpuResources.push(res)
+            if (!gpuMap.has(res.id)) {
+              gpuMap.set(res.id, res)
+            }
           }
         }
       }
     }
+    const gpuResources: ComputeResource[] = Array.from(gpuMap.values())
 
     const benchmarkPrices: ComputeResourcesPricingInfo[] = gpuResources.map((gpu) => ({
       id: gpu.id,
@@ -213,8 +216,7 @@ export class C2DEngineDocker extends C2DEngine {
     }
 
     const benchmarkEnv: C2DEnvironmentConfig = {
-      id: 'benchmark',
-      description: 'Auto-generated benchmark environment for rewards eligibility',
+      description: 'Auto-generated benchmark environment',
       storageExpiry: 604800,
       maxJobDuration: 180,
       minJobDuration: 60,
