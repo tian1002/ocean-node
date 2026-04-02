@@ -80,6 +80,7 @@ export class C2DEngineDocker extends C2DEngine {
   private cpuAllocations: Map<string, number[]> = new Map()
   private envCpuCores: number[] = []
   private cpuOffset: number
+  private enableNetwork: boolean
 
   public constructor(
     clusterConfig: C2DClusterInfo,
@@ -105,6 +106,7 @@ export class C2DEngineDocker extends C2DEngine {
     this.paymentClaimInterval = clusterConfig.connection.paymentClaimInterval || 3600 // 1 hour
     this.scanImages = clusterConfig.connection.scanImages || false // default is not to scan images for now, until it's prod ready
     this.scanImageDBUpdateInterval = clusterConfig.connection.scanImageDBUpdateInterval
+    this.enableNetwork = clusterConfig.connection.enableNetwork ?? false
     if (
       clusterConfig.connection.protocol &&
       clusterConfig.connection.host &&
@@ -1726,7 +1728,6 @@ export class C2DEngineDocker extends C2DEngine {
       // create the container
       const mountVols: any = { '/data': {} }
       const hostConfig: HostConfig = {
-        NetworkMode: 'none', // no network inside the container
         Mounts: [
           {
             Type: 'volume',
@@ -1735,6 +1736,9 @@ export class C2DEngineDocker extends C2DEngine {
             ReadOnly: false
           }
         ]
+      }
+      if (!this.enableNetwork) {
+        hostConfig.NetworkMode = 'none' // no network inside the container
       }
       // disk
       // if (diskSize && diskSize > 0) {
