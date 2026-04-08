@@ -2,6 +2,17 @@ import { DDO } from '@oceanprotocol/ddo-js'
 import { PolicyServerResult } from '../../@types/policyServer.js'
 import { isDefined } from '../../utils/util.js'
 import { BaseFileObject } from '../../@types/fileObject.js'
+import { OceanNode } from '../../OceanNode.js'
+
+export function attachNodeAddress(
+  command: Record<string, any>,
+  nodeAddress: string
+): Record<string, any> {
+  return {
+    ...command,
+    nodeAddress
+  }
+}
 
 export class PolicyServer {
   serverUrl: string
@@ -12,9 +23,18 @@ export class PolicyServer {
     this.apikey = process.env.POLICY_SERVER_API_KEY
   }
 
+  private attachNodeAddress(command: Record<string, any>): Record<string, any> {
+    const node = OceanNode.getInstance()
+    const keyManager = node.getKeyManager()
+    const nodeAddress = keyManager.getEthWallet().address
+    return attachNodeAddress(command, nodeAddress)
+  }
+
   private async askServer(command: any): Promise<PolicyServerResult> {
     if (!this.serverUrl) return { success: true, message: '', httpStatus: 404 }
     let response
+    const commandWithNodeAddress = this.attachNodeAddress(command)
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json'
     }
@@ -25,7 +45,7 @@ export class PolicyServer {
       response = await fetch(this.serverUrl, {
         headers,
         method: 'POST',
-        body: JSON.stringify(command)
+        body: JSON.stringify(commandWithNodeAddress)
       })
     } catch (e) {
       const errorText =
