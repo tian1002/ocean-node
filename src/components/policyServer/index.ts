@@ -4,16 +4,6 @@ import { isDefined } from '../../utils/util.js'
 import { BaseFileObject } from '../../@types/fileObject.js'
 import { OceanNode } from '../../OceanNode.js'
 
-export function attachNodeAddress(
-  command: Record<string, any>,
-  nodeAddress: string
-): Record<string, any> {
-  return {
-    ...command,
-    nodeAddress
-  }
-}
-
 export class PolicyServer {
   serverUrl: string
   private apikey: string
@@ -27,7 +17,10 @@ export class PolicyServer {
     const node = OceanNode.getInstance()
     const keyManager = node.getKeyManager()
     const nodeAddress = keyManager.getEthWallet().address
-    return attachNodeAddress(command, nodeAddress)
+    return {
+      ...command,
+      nodeAddress
+    }
   }
 
   private async askServer(command: any): Promise<PolicyServerResult> {
