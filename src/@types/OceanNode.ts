@@ -4,6 +4,7 @@ import { C2DClusterInfo, C2DDockerConfig } from './C2D/C2D'
 import { FeeStrategy } from './Fees'
 import { Schema } from '../components/database'
 import { KeyProviderType } from './KeyManager'
+import type { PersistentStorageConfig } from './PersistentStorage.js'
 
 export interface OceanNodeDBConfig {
   url: string | null
@@ -140,6 +141,7 @@ export interface OceanNodeConfig {
   httpCertPath?: string
   httpKeyPath?: string
   enableBenchmark?: boolean
+  persistentStorage?: PersistentStorageConfig
 }
 
 export interface P2PStatusResponse {
