@@ -191,11 +191,11 @@ describe('Compute', () => {
           '0xc594c6e5def4bab63ac29eed19a134c130388f74f019bc74b8f4389df2837a58',
           JSON.stringify(['0xe2DD09d719Da89e5a3D0F2549c7E24566e947260']),
           `${homedir}/.ocean/ocean-contracts/artifacts/address.json`,
-          '[{"socketPath":"/var/run/docker.sock","resources":[{"id":"disk","total":10}],"storageExpiry":604800,"maxJobDuration":3600,"minJobDuration":60,"fees":{"' +
+          '[{"socketPath":"/var/run/docker.sock","environments":[{"storageExpiry":604800,"maxJobDuration":3600,"minJobDuration":60,"resources":[{"id":"cpu","total":4,"max":4,"min":1,"type":"cpu"},{"id":"ram","total":10,"max":10,"min":1,"type":"ram"},{"id":"disk","total":10,"max":10,"min":0,"type":"disk"}],"fees":{"' +
             DEVELOPMENT_CHAIN_ID +
             '":[{"feeToken":"' +
             paymentToken +
-            '","prices":[{"id":"cpu","price":1}]}]},"free":{"maxJobDuration":60,"minJobDuration":10,"maxJobs":3,"resources":[{"id":"cpu","max":1},{"id":"ram","max":1},{"id":"disk","max":1}]}}]'
+            '","prices":[{"id":"cpu","price":1}]}]},"free":{"maxJobDuration":60,"minJobDuration":10,"maxJobs":3,"resources":[{"id":"cpu","max":1},{"id":"ram","max":1},{"id":"disk","max":1}]}}]}]'
         ]
       )
     )
@@ -2724,7 +2724,7 @@ describe('Compute Access Restrictions', () => {
             '0xc594c6e5def4bab63ac29eed19a134c130388f74f019bc74b8f4389df2837a58',
             JSON.stringify(['0xe2DD09d719Da89e5a3D0F2549c7E24566e947260']),
             `${homedir}/.ocean/ocean-contracts/artifacts/address.json`,
-            '[{"socketPath":"/var/run/docker.sock","resources":[{"id":"disk","total":10}],"storageExpiry":604800,"maxJobDuration":3600,"minJobDuration":60,"access":{"addresses":["' +
+            '[{"socketPath":"/var/run/docker.sock","environments":[{"storageExpiry":604800,"maxJobDuration":3600,"minJobDuration":60,"resources":[{"id":"cpu","total":4,"max":4,"min":1,"type":"cpu"},{"id":"ram","total":10,"max":10,"min":1,"type":"ram"},{"id":"disk","total":10,"max":10,"min":0,"type":"disk"}],"access":{"addresses":["' +
               allowedAddress +
               '"],"accessLists":[]},"fees":{"' +
               DEVELOPMENT_CHAIN_ID +
@@ -2732,7 +2732,7 @@ describe('Compute Access Restrictions', () => {
               paymentToken +
               '","prices":[{"id":"cpu","price":1}]}]},"free":{"maxJobDuration":60,"minJobDuration":10,"maxJobs":3,"access":{"addresses":["' +
               allowedAddress +
-              '"],"accessLists":[]},"resources":[{"id":"cpu","max":1},{"id":"ram","max":1},{"id":"disk","max":1}]}}]'
+              '"],"accessLists":[]},"resources":[{"id":"cpu","max":1},{"id":"ram","max":1},{"id":"disk","max":1}]}}]}]'
           ]
         )
       )
@@ -2888,36 +2888,44 @@ describe('Compute Access Restrictions', () => {
             JSON.stringify([
               {
                 socketPath: '/var/run/docker.sock',
-                resources: [{ id: 'disk', total: 10 }],
-                storageExpiry: 604800,
-                maxJobDuration: 3600,
-                minJobDuration: 60,
-                access: {
-                  addresses: [],
-                  accessLists: [{ [DEVELOPMENT_CHAIN_ID]: [accessListAddress] }]
-                },
-                fees: {
-                  [DEVELOPMENT_CHAIN_ID]: [
-                    {
-                      feeToken: paymentToken,
-                      prices: [{ id: 'cpu', price: 1 }]
+                environments: [
+                  {
+                    storageExpiry: 604800,
+                    maxJobDuration: 3600,
+                    minJobDuration: 60,
+                    resources: [
+                      { id: 'cpu', total: 4, max: 4, min: 1, type: 'cpu' },
+                      { id: 'ram', total: 10, max: 10, min: 1, type: 'ram' },
+                      { id: 'disk', total: 10, max: 10, min: 0, type: 'disk' }
+                    ],
+                    access: {
+                      addresses: [],
+                      accessLists: [{ [DEVELOPMENT_CHAIN_ID]: [accessListAddress] }]
+                    },
+                    fees: {
+                      [DEVELOPMENT_CHAIN_ID]: [
+                        {
+                          feeToken: paymentToken,
+                          prices: [{ id: 'cpu', price: 1 }]
+                        }
+                      ]
+                    },
+                    free: {
+                      maxJobDuration: 60,
+                      minJobDuration: 10,
+                      maxJobs: 3,
+                      access: {
+                        addresses: [],
+                        accessLists: [{ [DEVELOPMENT_CHAIN_ID]: [accessListAddress] }]
+                      },
+                      resources: [
+                        { id: 'cpu', max: 1 },
+                        { id: 'ram', max: 1 },
+                        { id: 'disk', max: 1 }
+                      ]
                     }
-                  ]
-                },
-                free: {
-                  maxJobDuration: 60,
-                  minJobDuration: 10,
-                  maxJobs: 3,
-                  access: {
-                    addresses: [],
-                    accessLists: [{ [DEVELOPMENT_CHAIN_ID]: [accessListAddress] }]
-                  },
-                  resources: [
-                    { id: 'cpu', max: 1 },
-                    { id: 'ram', max: 1 },
-                    { id: 'disk', max: 1 }
-                  ]
-                }
+                  }
+                ]
               }
             ])
           ]
@@ -3045,11 +3053,11 @@ describe('Compute Access Restrictions', () => {
             JSON.stringify([DEVELOPMENT_CHAIN_ID]),
             '0xc594c6e5def4bab63ac29eed19a134c130388f74f019bc74b8f4389df2837a58',
             `${homedir}/.ocean/ocean-contracts/artifacts/address.json`,
-            '[{"socketPath":"/var/run/docker.sock","resources":[{"id":"disk","total":10}],"storageExpiry":604800,"maxJobDuration":3600,"minJobDuration":60,"paymentClaimInterval":60,"fees":{"' +
+            '[{"socketPath":"/var/run/docker.sock","paymentClaimInterval":60,"environments":[{"storageExpiry":604800,"maxJobDuration":3600,"minJobDuration":60,"resources":[{"id":"cpu","total":4,"max":4,"min":1,"type":"cpu"},{"id":"ram","total":10,"max":10,"min":1,"type":"ram"},{"id":"disk","total":10,"max":10,"min":0,"type":"disk"}],"fees":{"' +
               DEVELOPMENT_CHAIN_ID +
               '":[{"feeToken":"' +
               paymentToken +
-              '","prices":[{"id":"cpu","price":1}]}]},"free":{"maxJobDuration":60,"minJobDuration":10,"maxJobs":3,"resources":[{"id":"cpu","max":1},{"id":"ram","max":1},{"id":"disk","max":1}]}}]'
+              '","prices":[{"id":"cpu","price":1}]}]},"free":{"maxJobDuration":60,"minJobDuration":10,"maxJobs":3,"resources":[{"id":"cpu","max":1},{"id":"ram","max":1},{"id":"disk","max":1}]}}]}]'
           ]
         )
       )

@@ -239,47 +239,51 @@ if [ -z "$DOCKER_COMPUTE_ENVIRONMENTS" ]; then
   export DOCKER_COMPUTE_ENVIRONMENTS='[
     {
       "socketPath": "/var/run/docker.sock",
-      "resources": [
+      "environments": [
         {
-          "id": "disk",
-          "total": 10
-        }
-      ],
-      "storageExpiry": 604800,
-      "maxJobDuration": 36000,
-      "minJobDuration": 60,
-      "fees": {
-        "1": [
-          {
-            "feeToken": "0x123",
-            "prices": [
+          "storageExpiry": 604800,
+          "maxJobDuration": 36000,
+          "minJobDuration": 60,
+          "resources": [
+            {
+              "id": "disk",
+              "total": 10
+            }
+          ],
+          "fees": {
+            "1": [
+              {
+                "feeToken": "0x123",
+                "prices": [
+                  {
+                    "id": "cpu",
+                    "price": 1
+                  }
+                ]
+              }
+            ]
+          },
+          "free": {
+            "maxJobDuration": 360000,
+            "minJobDuration": 60,
+            "maxJobs": 3,
+            "resources": [
               {
                 "id": "cpu",
-                "price": 1
+                "max": 1
+              },
+              {
+                "id": "ram",
+                "max": 1
+              },
+              {
+                "id": "disk",
+                "max": 1
               }
             ]
           }
-        ]
-      },
-      "free": {
-        "maxJobDuration": 360000,
-        "minJobDuration": 60,
-        "maxJobs": 3,
-        "resources": [
-          {
-            "id": "cpu",
-            "max": 1
-          },
-          {
-            "id": "ram",
-            "max": 1
-          },
-          {
-            "id": "disk",
-            "max": 1
-          }
-        ]
-      }
+        }
+      ]
     }
   ]'
 fi
@@ -628,7 +632,7 @@ if command -v jq &> /dev/null; then
 
   if [ "$GPU_COUNT" -gt 0 ]; then
     echo "Detected $GPU_COUNT GPU type(s). Updating configuration..."
-    DOCKER_COMPUTE_ENVIRONMENTS=$(echo "$DOCKER_COMPUTE_ENVIRONMENTS" | jq --argjson gpus "$DETECTED_GPUS" '.[0].resources += $gpus')
+    DOCKER_COMPUTE_ENVIRONMENTS=$(echo "$DOCKER_COMPUTE_ENVIRONMENTS" | jq --argjson gpus "$DETECTED_GPUS" '.[0].environments[0].resources += $gpus')
     echo "GPUs added to Compute Environment resources."
   else
     echo "No GPUs detected."

@@ -140,6 +140,7 @@ export interface OceanNodeConfig {
   jwtSecret?: string
   httpCertPath?: string
   httpKeyPath?: string
+  enableBenchmark?: boolean
   persistentStorage?: PersistentStorageConfig
 }
 

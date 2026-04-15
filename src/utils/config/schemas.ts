@@ -200,6 +200,7 @@ export const ComputeEnvFeesSchema = z.object({
 })
 
 export const ComputeEnvironmentFreeOptionsSchema = z.object({
+  minJobDuration: z.number().int().optional().default(60),
   maxJobDuration: z.number().int().optional().default(3600),
   maxJobs: z.number().int().optional().default(3),
   resources: z.array(ComputeResourceSchema).optional(),
@@ -215,66 +216,63 @@ export const ComputeEnvironmentFreeOptionsSchema = z.object({
   allowImageBuild: z.boolean().optional().default(false)
 })
 
+export const C2DEnvironmentConfigSchema = z
+  .object({
+    id: z.string().optional(),
+    description: z.string().optional(),
+    storageExpiry: z.number().int().optional().default(604800),
+    minJobDuration: z.number().int().optional().default(60),
+    maxJobDuration: z.number().int().optional().default(3600),
+    maxJobs: z.number().int().optional(),
+    fees: z.record(z.string(), z.array(ComputeEnvFeesSchema)).optional(),
+    access: z
+      .object({
+        addresses: z.array(z.string()),
+        accessLists: z
+          .array(z.record(z.string(), z.array(z.string())))
+          .nullable()
+          .optional()
+      })
+      .optional(),
+    free: ComputeEnvironmentFreeOptionsSchema.optional(),
+    resources: z.array(ComputeResourceSchema).optional()
+  })
+  .refine(
+    (data) =>
+      (data.fees !== undefined && Object.keys(data.fees).length > 0) ||
+      (data.free !== undefined && data.free !== null),
+    {
+      message:
+        'Each environment must have either a non-empty "fees" configuration or a "free" configuration'
+    }
+  )
+  .refine((data) => data.storageExpiry >= data.maxJobDuration, {
+    message: '"storageExpiry" should be greater than "maxJobDuration"'
+  })
+  .refine(
+    (data) => {
+      if (!data.resources) return false
+      return data.resources.some((r) => r.id === 'disk' && r.total)
+    },
+    { message: 'There is no "disk" resource configured. This is mandatory' }
+  )
+
 export const C2DDockerConfigSchema = z.array(
-  z
-    .object({
-      socketPath: z.string().optional(),
-      protocol: z.string().optional(),
-      host: z.string().optional(),
-      port: z.number().optional(),
-      caPath: z.string().optional(),
-      certPath: z.string().optional(),
-      keyPath: z.string().optional(),
-      resources: z.array(ComputeResourceSchema).optional(),
-      storageExpiry: z.number().int().optional().default(604800),
-      maxJobDuration: z.number().int().optional().default(3600),
-      minJobDuration: z.number().int().optional().default(60),
-      access: z
-        .object({
-          addresses: z.array(z.string()),
-          accessLists: z
-            .array(z.record(z.string(), z.array(z.string())))
-            .nullable()
-            .optional()
-        })
-        .optional(),
-      fees: z.record(z.string(), z.array(ComputeEnvFeesSchema)).optional(),
-      free: ComputeEnvironmentFreeOptionsSchema.optional(),
-      imageRetentionDays: z.number().int().min(1).optional().default(7),
-      imageCleanupInterval: z.number().int().min(3600).optional().default(86400), // min 1 hour, default 24 hours
-      scanImages: z.boolean().optional().default(false),
-      scanImageDBUpdateInterval: z.number().int().min(3600).optional().default(43200), // default 43200 (12 hours)
-      enableNetwork: z.boolean().optional().default(false)
-    })
-    .refine(
-      (data) =>
-        (data.fees !== undefined && Object.keys(data.fees).length > 0) ||
-        (data.free !== undefined && data.free !== null),
-      {
-        message:
-          'Each docker compute environment must have either a non-empty "fees" configuration or a "free" configuration'
-      }
-    )
-    .refine((data) => data.storageExpiry >= data.maxJobDuration, {
-      message: '"storageExpiry" should be greater than "maxJobDuration"'
-    })
-    .refine(
-      (data) => {
-        if (!data.resources) return false
-        return data.resources.some((r) => r.id === 'disk' && r.total)
-      },
-      { message: 'There is no "disk" resource configured. This is mandatory' }
-    )
-    .transform((data) => {
-      if (data.resources) {
-        for (const resource of data.resources) {
-          if (resource.id === 'disk' && resource.total) {
-            resource.type = 'disk'
-          }
-        }
-      }
-      return data
-    })
+  z.object({
+    socketPath: z.string().optional(),
+    protocol: z.string().optional(),
+    host: z.string().optional(),
+    port: z.number().optional(),
+    caPath: z.string().optional(),
+    certPath: z.string().optional(),
+    keyPath: z.string().optional(),
+    imageRetentionDays: z.number().int().min(1).optional().default(7),
+    imageCleanupInterval: z.number().int().min(3600).optional().default(86400), // min 1 hour, default 24 hours
+    scanImages: z.boolean().optional().default(false),
+    scanImageDBUpdateInterval: z.number().int().min(3600).optional().default(43200), // default 43200 (12 hours)
+    enableNetwork: z.boolean().optional().default(false),
+    environments: z.array(C2DEnvironmentConfigSchema).min(1)
+  })
 )
 
 export const C2DClusterInfoSchema = z.object({
@@ -381,6 +379,7 @@ export const OceanNodeConfigSchema = z
     INTERFACES: z.string().optional(),
     hasP2P: booleanFromString.optional().default(true),
     hasHttp: booleanFromString.optional().default(true),
+    enableBenchmark: booleanFromString.optional().default(false),
 
     p2pConfig: OceanNodeP2PConfigSchema.nullable().optional(),
     hasIndexer: booleanFromString.default(true),
