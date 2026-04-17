@@ -389,7 +389,41 @@ export const OceanNodeConfigSchema = z
     DB_PASSWORD: z.string().optional(),
     DB_TYPE: z.string().optional(),
     dbConfig: OceanNodeDBConfigSchema.optional(),
-    persistentStorage: PersistentStorageConfigSchema.optional(),
+    // Accept either an object (config file) or a JSON string (env var `PERSISTENT_STORAGE`),
+    // and validate the parsed value against the PersistentStorage schema.
+    persistentStorage: z
+      .preprocess((val) => {
+        if (val === undefined || val === null) return val
+        if (typeof val === 'string') {
+          const tryParse = (s: string) => {
+            try {
+              return JSON.parse(s)
+            } catch {
+              return undefined
+            }
+          }
+
+          // 1) Normal JSON string
+          const parsed = tryParse(val)
+          if (parsed !== undefined) {
+            // 2) Handle double-encoded JSON (e.g. "\"{...}\"")
+            if (typeof parsed === 'string') {
+              const parsedTwice = tryParse(parsed)
+              if (parsedTwice !== undefined) return parsedTwice
+            }
+            return parsed
+          }
+
+          // 3) Common docker-compose/shell mistake: single quotes inside JSON
+          const normalized = val.replace(/'/g, '"')
+          const parsedNormalized = tryParse(normalized)
+          if (parsedNormalized !== undefined) return parsedNormalized
+
+          return val
+        }
+        return val
+      }, PersistentStorageConfigSchema)
+      .optional(),
 
     FEE_AMOUNT: z.string().optional(),
     FEE_TOKENS: z.string().optional(),
