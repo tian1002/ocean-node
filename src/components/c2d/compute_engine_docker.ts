@@ -277,7 +277,13 @@ export class C2DEngineDocker extends C2DEngine {
     const consumerAddress = this.getKeyManager().getEthAddress()
 
     if (config.enableBenchmark) {
-      this.createBenchmarkEnvironment(sysinfo, envConfig)
+      if (supportedChains.includes(parseInt(BASE_CHAIN_ID))) {
+        this.createBenchmarkEnvironment(sysinfo, envConfig)
+      } else {
+        CORE_LOGGER.warn(
+          `Skipping benchmark environment: Base chain (${BASE_CHAIN_ID}) is not in supportedNetworks`
+        )
+      }
     }
 
     for (let envIdx = 0; envIdx < envConfig.environments.length; envIdx++) {
