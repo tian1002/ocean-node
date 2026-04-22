@@ -405,9 +405,11 @@ export class C2DEngineDocker extends C2DEngine {
         let isBenchmarkEnv = false
         if (env.access?.accessLists) {
           const baseAccessList = env.access?.accessLists?.[0] as AccessList
-          isBenchmarkEnv = baseAccessList[BASE_CHAIN_ID].includes(
-            getAddress('0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a')
-          )
+          if (baseAccessList[BASE_CHAIN_ID]) {
+            isBenchmarkEnv = baseAccessList[BASE_CHAIN_ID].includes(
+              getAddress('0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a')
+            )
+          }
         }
 
         if (isBenchmarkEnv) {
