@@ -232,7 +232,7 @@ export class C2DEngineDocker extends C2DEngine {
       ],
       access: {
         addresses: [],
-        accessLists: [{ '8453': ['0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a'] }]
+        accessLists: [{ '8453': [getAddress('0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a')] }]
       },
       fees: benchmarkFees
     }
