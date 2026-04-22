@@ -27,7 +27,6 @@ import type {
 } from '../../@types/C2D/C2D.js'
 import {
   BASE_CHAIN_ID,
-  BENCHMARK_MONITORING_ADDRESS,
   getConfiguration,
   USDC_TOKEN_ADDRESS_BASE
 } from '../../utils/config.js'
@@ -64,7 +63,8 @@ import { Service } from '@oceanprotocol/ddo-js'
 import { getOceanTokenAddressForChain } from '../../utils/address.js'
 import { dockerRegistrysAuth, dockerRegistryAuth } from '../../@types/OceanNode.js'
 import { EncryptMethod } from '../../@types/fileObject.js'
-import { ZeroAddress } from 'ethers'
+import { getAddress, ZeroAddress } from 'ethers'
+import { AccessList } from '../../@types/AccessList.js'
 
 const C2D_CONTAINER_UID = 1000
 const C2D_CONTAINER_GID = 1000
@@ -231,8 +231,8 @@ export class C2DEngineDocker extends C2DEngine {
         ...gpuResources
       ],
       access: {
-        addresses: [BENCHMARK_MONITORING_ADDRESS],
-        accessLists: null
+        addresses: [],
+        accessLists: [{ '8453': ['0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a'] }]
       },
       fees: benchmarkFees
     }
@@ -400,8 +400,9 @@ export class C2DEngineDocker extends C2DEngine {
     for (const env of this.envs) {
       const cpuRes = this.getResource(env.resources ?? [], 'cpu')
       if (cpuRes && cpuRes.total > 0) {
-        const isBenchmarkEnv = env.access?.addresses?.includes(
-          BENCHMARK_MONITORING_ADDRESS
+        const baseAccessList = env.access?.accessLists?.[0] as AccessList
+        const isBenchmarkEnv = baseAccessList['8453'].includes(
+          getAddress('0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a')
         )
         if (isBenchmarkEnv) {
           const total = physicalCpuCount > 0 ? physicalCpuCount : cpuRes.total
