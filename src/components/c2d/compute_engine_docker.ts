@@ -402,10 +402,14 @@ export class C2DEngineDocker extends C2DEngine {
     for (const env of this.envs) {
       const cpuRes = this.getResource(env.resources ?? [], 'cpu')
       if (cpuRes && cpuRes.total > 0) {
-        const baseAccessList = env.access?.accessLists?.[0] as AccessList
-        const isBenchmarkEnv = baseAccessList[BASE_CHAIN_ID].includes(
-          getAddress('0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a')
-        )
+        let isBenchmarkEnv = false
+        if (env.access?.accessLists) {
+          const baseAccessList = env.access?.accessLists?.[0] as AccessList
+          isBenchmarkEnv = baseAccessList[BASE_CHAIN_ID].includes(
+            getAddress('0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a')
+          )
+        }
+
         if (isBenchmarkEnv) {
           const total = physicalCpuCount > 0 ? physicalCpuCount : cpuRes.total
           const cores = Array.from({ length: total }, (_, i) => i)
