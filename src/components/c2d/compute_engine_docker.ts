@@ -233,7 +233,7 @@ export class C2DEngineDocker extends C2DEngine {
       access: {
         addresses: [],
         accessLists: [
-          { BASE_CHAIN_ID: [getAddress('0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a')] }
+          { [BASE_CHAIN_ID]: [getAddress('0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a')] }
         ]
       },
       fees: benchmarkFees
