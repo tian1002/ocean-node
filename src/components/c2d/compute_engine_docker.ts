@@ -232,7 +232,9 @@ export class C2DEngineDocker extends C2DEngine {
       ],
       access: {
         addresses: [],
-        accessLists: [{ '8453': [getAddress('0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a')] }]
+        accessLists: [
+          { BASE_CHAIN_ID: [getAddress('0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a')] }
+        ]
       },
       fees: benchmarkFees
     }
@@ -401,7 +403,7 @@ export class C2DEngineDocker extends C2DEngine {
       const cpuRes = this.getResource(env.resources ?? [], 'cpu')
       if (cpuRes && cpuRes.total > 0) {
         const baseAccessList = env.access?.accessLists?.[0] as AccessList
-        const isBenchmarkEnv = baseAccessList['8453'].includes(
+        const isBenchmarkEnv = baseAccessList[BASE_CHAIN_ID].includes(
           getAddress('0xcb7Db55Ca9Aa9C3b25F5Bc266da63317fa02086a')
         )
         if (isBenchmarkEnv) {
